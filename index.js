@@ -10,10 +10,17 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
 // middleware***
+
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: [
+    'http://localhost:5173',
+    'https://car-doctor-f48ca.web.app',
+    'https://car-doctor-f48ca.firebaseapp.com'
+    ],
   credentials: true
 }));
+
+
 app.use(express.json());
 app.use(cookieParser());
 // make middleware***
@@ -53,6 +60,11 @@ const verifyToken = (req, res, next) =>{
   // console.log('verify token', token);
   // next();
 }
+const cookieOption = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  secure: process.env.NODE_ENV === "production" ? true : false
+}
 
 
 const uri = `mongodb+srv://${userName}:${password}@cluster0.wnyje.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -69,7 +81,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const serviceCollection = client.db('carDoctor').collection('services');
     const bookingCollection = client.db('carDoctor').collection('bookings');
@@ -79,17 +91,13 @@ async function run() {
     app.post('/jwt', async(req, res) =>{
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1d'});
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
-      })
+      res.cookie('token', token, cookieOption)
       .send({success: true});
     })
     app.post('/logout', async(req, res) =>{
       const user = req.body;
       // console.log('loging out', user);
-      res.clearCookie('token', { maxAge: 0 }).send({success: true})
+      res.clearCookie('token', { ...cookieOption, maxAge: 0 }).send({success: true})
     })
 
     // 2..***
@@ -159,7 +167,7 @@ async function run() {
         res.send(result);
     })
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
