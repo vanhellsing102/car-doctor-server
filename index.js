@@ -134,7 +134,7 @@ async function run() {
         //   return res.status(403).send({message: "forbidden"});
         // }
         // console.log("cook cookies", req.cookies);
-        console.log('token owner info', req.query);
+        // console.log('token owner info', req.query);
         if(req.user.email !== req.query.email){
           return res.status(403).send({message: 'forbidden'})
         }
